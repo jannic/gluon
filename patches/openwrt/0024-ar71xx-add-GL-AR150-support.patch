@@ -1,0 +1,115 @@
+From: Jan Niehusmann <jan@gondor.com>
+Date: Tue, 3 May 2016 18:39:24 +0200
+Subject: ar71xx: add GL-AR150 support
+
+patch from https://github.com/domino-team/OpenWrt-patches
+
+https://raw.githubusercontent.com/domino-team/OpenWrt-patches/master/AR150%2C%20AR300%2C%20Domino%20-%20CC1505/000-gl-ar150-cc.patch
+
+diff --git a/target/linux/ar71xx/base-files/etc/uci-defaults/01_leds b/target/linux/ar71xx/base-files/etc/uci-defaults/01_leds
+index 11b3fa0..4ecd6bf 100644
+--- a/target/linux/ar71xx/base-files/etc/uci-defaults/01_leds
++++ b/target/linux/ar71xx/base-files/etc/uci-defaults/01_leds
+@@ -181,6 +181,10 @@ dlan-pro-1200-ac)
+ 	ucidef_set_led_trigger_gpio "plcr" "dLAN" "devolo:error:dlan" "16" "0"
+ 	;;
+ 
++gl-ar150)
++	ucidef_set_led_wlan "wlan" "WLAN" "gl_ar150:wlan" "phy0tpt"
++	;;
++
+ gl-inet)
+ 	ucidef_set_led_netdev "lan" "LAN" "gl-connect:green:lan" "eth1"
+ 	ucidef_set_led_wlan "wlan" "WLAN" "gl-connect:red:wlan" "phy0tpt"
+diff --git a/target/linux/ar71xx/base-files/etc/uci-defaults/02_network b/target/linux/ar71xx/base-files/etc/uci-defaults/02_network
+index c0becfe..ca603ed 100755
+--- a/target/linux/ar71xx/base-files/etc/uci-defaults/02_network
++++ b/target/linux/ar71xx/base-files/etc/uci-defaults/02_network
+@@ -377,6 +377,7 @@ dir-505-a1)
+ alfa-ap96 |\
+ alfa-nx |\
+ ap83 |\
++gl-ar150 |\
+ gl-inet |\
+ jwap003 |\
+ pb42 |\
+diff --git a/target/linux/ar71xx/base-files/lib/ar71xx.sh b/target/linux/ar71xx/base-files/lib/ar71xx.sh
+index 5768286..718ee0b 100755
+--- a/target/linux/ar71xx/base-files/lib/ar71xx.sh
++++ b/target/linux/ar71xx/base-files/lib/ar71xx.sh
+@@ -458,6 +458,9 @@ ar71xx_board_detect() {
+ 		name="gl-inet"
+ 		gl_inet_board_detect
+ 		;;
++	*"GL AR150")
++        name="gl-ar150"
++        ;;
+ 	*"EnGenius EPG5000")
+ 		name="epg5000"
+ 		;;
+diff --git a/target/linux/ar71xx/base-files/lib/upgrade/platform.sh b/target/linux/ar71xx/base-files/lib/upgrade/platform.sh
+index 2fc1d10..b79c46b 100755
+--- a/target/linux/ar71xx/base-files/lib/upgrade/platform.sh
++++ b/target/linux/ar71xx/base-files/lib/upgrade/platform.sh
+@@ -211,6 +211,7 @@ platform_check_image() {
+ 	dlan-pro-500-wp | \
+ 	dlan-pro-1200-ac | \
+ 	dragino2 | \
++	gl-ar150 | \
+ 	epg5000 | \
+ 	esr1750 | \
+ 	esr900 | \
+diff --git a/target/linux/ar71xx/config-3.18 b/target/linux/ar71xx/config-3.18
+index 96a5ae2..0e8ff03 100644
+--- a/target/linux/ar71xx/config-3.18
++++ b/target/linux/ar71xx/config-3.18
+@@ -69,6 +69,7 @@ CONFIG_ATH79_MACH_ESR1750=y
+ CONFIG_ATH79_MACH_ESR900=y
+ CONFIG_ATH79_MACH_EW_DORIN=y
+ CONFIG_ATH79_MACH_F9K1115V2=y
++CONFIG_ATH79_MACH_GL_AR150=y
+ CONFIG_ATH79_MACH_GL_INET=y
+ CONFIG_ATH79_MACH_GS_MINIBOX_V1=y
+ CONFIG_ATH79_MACH_GS_OOLITE=y
+diff --git a/target/linux/ar71xx/generic/profiles/gl-connect.mk b/target/linux/ar71xx/generic/profiles/gl-connect.mk
+deleted file mode 100644
+index e9377db..0000000
+--- a/target/linux/ar71xx/generic/profiles/gl-connect.mk
++++ /dev/null
+@@ -1,17 +0,0 @@
+-#
+-# Copyright (C) 2014 OpenWrt.org
+-#
+-# This is free software, licensed under the GNU General Public License v2.
+-# See /LICENSE for more information.
+-#
+-
+-define Profile/GLINET
+-	NAME:=GL.iNet
+-	PACKAGES:=kmod-usb-core kmod-usb2
+-endef
+-
+-define Profile/GLINET/Description
+-	Package set optimized for the GL-Connect GL.iNet v1.
+-endef
+-
+-$(eval $(call Profile,GLINET))
+diff --git a/target/linux/ar71xx/image/Makefile b/target/linux/ar71xx/image/Makefile
+index d2538c8..e698e56 100644
+--- a/target/linux/ar71xx/image/Makefile
++++ b/target/linux/ar71xx/image/Makefile
+@@ -144,6 +144,14 @@ define Device/weio
+ endef
+ TARGET_DEVICES += weio
+ 
++define Device/gl-ar150
++  BOARDNAME = GL-AR150
++  IMAGE_SIZE = 16000k
++  CONSOLE = ttyATH0,115200
++  MTDPARTS = spi0.0:256k(u-boot)ro,64k(u-boot-env)ro,16000k(firmware),64k(art)ro
++endef
++TARGET_DEVICES += gl-ar150
++
+ define Device/wndr3700
+   BOARDNAME = WNDR3700
+   NETGEAR_KERNEL_MAGIC = 0x33373030
